@@ -50,7 +50,7 @@ class DecisionTreeClassifier(object):
             return tree
 
         # Find the feature,theta for splitting into subtrees
-        monothetic, best_feature, theta_val = self.find_most_information_gain_feature_and_theta(x, y)
+        is_discrete, best_feature, theta_val = self.get_feature_and_theta_with_least_entropy(x, y)
 
         tree.set_monothetic()
         tree.set_best_feature(best_feature)
@@ -58,7 +58,7 @@ class DecisionTreeClassifier(object):
 
         # Now, I need to devide current node data into left and right subtrees
         # based on best_feature and theta_val
-        left_data, right_data = self.filter_data(np.append(x, y, axis=1), monothetic, best_feature, theta_val)
+        left_data, right_data = self.filter_data(np.append(x, y, axis=1), is_discrete, best_feature, theta_val)
 
         left_subtree_label = left_data[:,-1] # Get the last column (label)
         right_subtree_label = right_data[:,-1] # Get the last column (label)
@@ -73,12 +73,12 @@ class DecisionTreeClassifier(object):
 
         return tree
 
-    def filter_data(self, data, monothetic, best_feature, theta_val):
+    def filter_data(self, data, is_discrete, best_feature, theta_val):
         """
         Filter Data based on best_feature and theta_val. It looks for
         monothetic flag to either compare '<' theta_val or '=' theta_val
         @type data: ndarray
-        @type monothetic: Boolean
+        @type is_discrete: Boolean
         @type best_feature: int
         @type theta_val: int
         @returns tuple(ndarray, ndarray)
@@ -87,14 +87,14 @@ class DecisionTreeClassifier(object):
         '''
         TODO: Move this to README
         filter by data with:
-        if not monothetic:
+        if is_discrete:
             left_data = data[best_feature] where data[best_feature] < theta_val
             right_data = data[best_feature] where data[best_feature] > theta_val
         else:
             left_data = data[best_feature] where data[best_feature] = theta_val
             right_data = data[best_feature] where data[best_feature] != theta_val
         '''
-        if not monothetic:
+        if is_discrete:
             left_data = data[data[:, best_feature] < theta_val]
             right_data = data[data[:, best_feature] > theta_val]
         else:
@@ -103,19 +103,40 @@ class DecisionTreeClassifier(object):
 
         return (left_data, right_data)
 
-    def find_most_information_gain_feature_and_theta(self, x, y):
+    def get_feature_and_theta_with_least_entropy(self, x, y):
         """
         Find the feature, theta_val for which we have the most information gain
-        If the x[feature] is monothetic, it will return Boolean = True
+        If the x[feature] is discrete, it will return Boolean = True
         @type x: ndarray
         @type y: ndarray
-        @returns (Boolean, int, int/str) => (is_monothetic, feature, theta_val)
+        @returns (Boolean, int, int/str) => (is_discrete, feature, theta_val)
         """
 
         '''
         TODO: Move this to README
         Pick a feature, with theta val, such that, next level gives the most
-        information gain or least entropy 
+        information gain or least entropy
+
+        https://stackoverflow.com/questions/1859554/what-is-entropy-and-information-gain
+
+        Calculating entropy:
+                 n
+        H(X) = - ∑   p(x_i) log ( p(x_i) )
+               i = 1
+               where n is # of outcomes (e.g. x[feature] < theta OR x[feature] > theta)
+
+        Information gain with feature f:
+        Gain = entropy_before_split - entropy_after_split
+        entropy_after_split = (num_of_records_in_left * entroy_left + num_of_records_in_right * entroy_right)/total dataset before split
+        entroy_left = from H(x)
+
+        In words, select an attribute and for each value check target attribute
+        value ... so p(yj) is the fraction of patterns at Node N are
+        in category yj - one for true in target value and one one for false.
+
+        https://stackoverflow.com/questions/14363689/calculating-entropy-in-decision-tree-machine-learning
+
+        So how do we calculate entropy for continuous feature?
         '''
 
 
