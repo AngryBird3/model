@@ -4,14 +4,13 @@
 Created on July 12, 2017
 @author: Dhara
 '''
-import BinaryDecisionTree
-import FeatureFiltering
-
+from BinaryFeatureFiltering import BinaryFeatureFiltering
+from BinaryDecisionTree import BinaryDecisionTree
 class DecisionTreeClassifier(object):
     """
     Main functions for classifying using (binary) decision tree
     """
-    def __init__(self, feature_selector = FeatureFiltering()):
+    def __init__(self, feature_selector = BinaryFeatureFiltering()):
         self.binary_decision_tree = None
         # Letting user implement different feature selctor to select feature
         # and value for each split; please see FeatureSelector class for more info
@@ -52,7 +51,7 @@ class DecisionTreeClassifier(object):
 
 
         # Terminate condition
-        if should_we_stop(tree, y):
+        if self.should_we_stop(tree, y):
             tree.add_label(self.find_label(y))
             return tree
 
@@ -79,12 +78,16 @@ class DecisionTreeClassifier(object):
 
         return tree
 
-    def predict(self, x, root=self.binary_decision_tree):
+    def should_we_stop(self, tree, y):
+        
+
+    def predict(self, x, root="BEGIN"):
         """
         @type x: ndarray (m x n)
         @return int (prediction)
         """
-
+        if root == "BEGIN":
+            root = self.binary_decision_tree
         # TODO: Move this to README
         # My trained tree looks like:
         #

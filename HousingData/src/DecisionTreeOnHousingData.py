@@ -7,6 +7,7 @@ Created on July 11, 2017
 
 import numpy as np
 import pandas as pd
+from DecisionTreeClassifier import DecisionTreeClassifier
 
 class BostonHousingData(object):
     """
@@ -40,7 +41,9 @@ class BostonHousingData(object):
         """
         Reads data from tab separated text file into numpy array
         """
-        return self.read_data_from_data_frame(self.read_data_frame_from_text_file(self.train_path))
+        return self.normalize_data(
+            self.read_data_from_data_frame(
+                self.read_data_frame_from_text_file(self.train_path)))
 
     def normalize_data(self, data):
         """
@@ -48,9 +51,13 @@ class BostonHousingData(object):
         Find min(feature=f) and max(feaure=f)
         (data[f] - min[f])/max[f]
         """
-        return (A - np.amin(A, axis=0))/np.amax(A, axis=0)
+        return (data - np.amin(data, axis=0))/np.amax(data, axis=0)
 
 def main():
     boston_housing_data = BostonHousingData()
     arr = boston_housing_data.read_data()
+    x = np.delete(arr, -1, axis=-1) #Remove labels
+    y = arr[:,-1]
+    classifier = DecisionTreeClassifier()
+    classifier.create_decision_tree(x, y)
 main()
