@@ -51,7 +51,7 @@ class DecisionTreeClassifier(object):
 
 
         # Terminate condition
-        if self.should_we_stop(tree, y):
+        if feature_selector.should_we_stop_filtering(y):
             tree.add_label(self.find_label(y))
             return tree
 
@@ -77,9 +77,6 @@ class DecisionTreeClassifier(object):
         tree.set_right_subtree(right_subtree)
 
         return tree
-
-    def should_we_stop(self, tree, y):
-        
 
     def predict(self, x, root="BEGIN"):
         """

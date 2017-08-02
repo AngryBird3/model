@@ -12,6 +12,11 @@ class BinaryFeatureFiltering(object):
     Assuming that theta are continuous value, and we've decision like left
     branch values are < theta and right branch values are > theta.
     """
+    # Minimum error threshold point at which we'll stop splitting binary tree
+    MINIMUM_ERROR_THRESHOLD = 7
+    # Minimum record count at each leaf node, at which we we'll stop splitting
+    # binary tree
+    FEW_RECORDS = 10
     def __init__(self):
         """
         """
@@ -59,7 +64,7 @@ class BinaryFeatureFiltering(object):
         #    values for split, choose value which gives minimum variance
         #
         # We'll go with B.
-        
+
         # precondition
         if x.shape[1] != len(y):
             raise ValueError("FeatureFiltering: Shape mismatch, Input data rows\
@@ -135,10 +140,6 @@ class BinaryFeatureFiltering(object):
         # 1/2 ∑ (Yi - MU)**2
         # I can remove 1/2; since its constant
 
-        #precondition
-        if len(x) == 0 or x.shape[1] != len(y):
-            raise ValueError("FeatureFiltering: Shape mismatch, Input data rows\
-                doesn't match with label rows")
         MU = np.average(y)
         # >>> np.sum(list(map(lambda y: (y - mu)**2, a)))
         # 0.5
@@ -146,3 +147,10 @@ class BinaryFeatureFiltering(object):
         # 0.5
         # >>>
         return np.sum(list(map(lambda y: (y - MU)**2, y)))
+
+    def should_we_stop_filtering(self, y):
+        # If there are few records remaining, stop
+        if len(y) < BinaryFeatureFiltering.FEW_RECORDS or \
+            self.get_error(y) < BinaryFeatureFiltering.MINIMUM_ERROR_THRESHOLD:
+            return True
+        return False
