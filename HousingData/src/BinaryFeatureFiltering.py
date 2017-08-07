@@ -4,7 +4,7 @@
 Created on July 22, 2017
 @author: Dhara
 '''
-
+import numpy as np
 class BinaryFeatureFiltering(object):
     """
     Binary Feature Filtering class for Binary Decision Tree.
@@ -66,14 +66,14 @@ class BinaryFeatureFiltering(object):
         # We'll go with B.
 
         # precondition
-        if x.shape[1] != len(y):
-            raise ValueError("FeatureFiltering: Shape mismatch, Input data rows\
-                doesn't match with label rows")
+        if x.shape[0] != len(y):
+            raise ValueError("FeatureFiltering: Shape mismatch, Input data rows"
+                " doesn't match with label rows")
 
         # For each feature, consider all the values as lambda and compute entroy
         best_feature, least_err_val = None, None
-        for col in range(data.shape[1]):
-            val, error = self.get_theta_with_least_entropy(data, col, y)
+        for col in range(x.shape[1]):
+            val, error = self.get_theta_with_least_entropy(x, col, y)
             if best_feature == None or error < least_err_val:
                 best_feature, least_err_val = col, error
         return (best_feature, least_err_val)
@@ -91,9 +91,6 @@ class BinaryFeatureFiltering(object):
         if feature > data.shape[1]:
             raise ValueError("FeatureFiltering: Shape mismatch, feature to\
                 consider is out side of range data (features)")
-        if data.shape[1] != len(y):
-            raise ValueError("FeatureFiltering: Shape mismatch, Input data rows\
-                doesn't match with label rows")
 
         feature_values = np.unique(data[:,feature])
         # I'll store split error for each theta/value in given feature vector,
@@ -105,14 +102,15 @@ class BinaryFeatureFiltering(object):
             right_subtree_label = right_data[:,-1] # Get the last column (label)
 
             err_left = self.get_error(left_subtree_label)
-            err_right = self.get_error(right_subtree_data)
-            split_error = (float(len(left_subtree_label))  * err_left + float(len(right_subtree_label)) * err_right) / float(len(data))
-            least_entropy_values[theta] = err
-        return  min(least_entropy_values, key=lambda k:least_entropy_values[k])
+            err_right = self.get_error(right_subtree_label)
+            split_error = (float(len(left_subtree_label))  * err_left +
+                           float(len(right_subtree_label)) * err_right) / float(len(data))
+            least_entropy_values[theta] = split_error
+        return  min(least_entropy_values, key=lambda k:least_entropy_values[k]), min(least_entropy_values.values())
 
     def filter_data(self, data, feature, theta_val):
         """
-        Filter Data based on best_feature and theta_val.
+        Filter Data based on feature and theta_val.
         @type data: ndarray
         @type feature: int
         @type theta_val: int
@@ -123,8 +121,8 @@ class BinaryFeatureFiltering(object):
             raise ValueError("FeatureFiltering: Shape mismatch, feature to\
                 consider is out side of range data (features)")
 
-        left_data = data[data[:, best_feature] < theta_val]
-        right_data = data[data[:, best_feature] > theta_val]
+        left_data = data[data[:, feature] < theta_val]
+        right_data = data[data[:, feature] > theta_val]
 
         return (left_data, right_data)
 
@@ -149,8 +147,23 @@ class BinaryFeatureFiltering(object):
         return np.sum(list(map(lambda y: (y - MU)**2, y)))
 
     def should_we_stop_filtering(self, y):
+        '''
+        Tells us whether we should stop splitting into more to avoid both over/under
+        fitting
+        @type y: ndarray (n x 1)
+        @returns boolean
+        '''
         # If there are few records remaining, stop
         if len(y) < BinaryFeatureFiltering.FEW_RECORDS or \
             self.get_error(y) < BinaryFeatureFiltering.MINIMUM_ERROR_THRESHOLD:
             return True
         return False
+
+    def assign_label(self, y):
+        '''
+        Assign label for leaf node having 'y' data
+        I decided to just do average of what ended up in leaf node 'y'
+        @type y: ndarray (n x 1)
+        @returns int
+        '''
+        return np.average(y)

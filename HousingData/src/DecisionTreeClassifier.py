@@ -4,8 +4,10 @@
 Created on July 12, 2017
 @author: Dhara
 '''
+import numpy as np
 from BinaryFeatureFiltering import BinaryFeatureFiltering
 from BinaryDecisionTree import BinaryDecisionTree
+
 class DecisionTreeClassifier(object):
     """
     Main functions for classifying using (binary) decision tree
@@ -21,7 +23,7 @@ class DecisionTreeClassifier(object):
         @type x: ndarray (training data)
         @type y: ndarray (training data label)
         """
-        self.binary_decision_tree = create_decision_tree(x, y)
+        self.binary_decision_tree = self.create_decision_tree(x, y)
 
     def create_decision_tree(self, x, y, tree=BinaryDecisionTree()):
         """
@@ -49,38 +51,37 @@ class DecisionTreeClassifier(object):
         # This looks recursive, but we need to stop sometime: what could be the criteria?
         # Let's make a method which does that: should_we_stop(tree, y)
 
-
         # Terminate condition
-        if feature_selector.should_we_stop_filtering(y):
-            tree.add_label(self.find_label(y))
+        if self.feature_selector.should_we_stop_filtering(y):
+            tree.add_label(self.feature_selector.assign_label(y))
             return tree
 
         # Find the feature,theta for splitting into subtrees
-        best_feature, theta_val = feature_selector.get_feature_and_theta_with_least_entropy(x, y)
+        best_feature, theta_val = self.feature_selector.get_feature_and_theta_with_least_entropy(x, y)
 
         tree.set_best_feature(best_feature)
         tree.add_theta(theta_val)
 
         # Now, I need to devide current node data into left and right subtrees
         # based on best_feature and theta_val
-        left_data, right_data = self.filter_data(np.append(x, y, axis=1), best_feature, theta_val)
+        left_data, right_data = self.feature_selector.filter_data(np.append(x, y, axis=1), best_feature, theta_val)
 
-        left_subtree_label = left_data[:,-1] # Get the last column (label)
-        right_subtree_label = right_data[:,-1] # Get the last column (label)
+        left_subtree_label = np.array([left_data[:,-1]]).T # Get the last column (label)
+        right_subtree_label = np.array([right_data[:,-1]]).T # Get the last column (label)
         left_subtree_data = np.delete(left_data, -1, axis=-1) # Removing last column (label)
         right_subtree_data = np.delete(right_data, -1, axis=-1) # Removing last column (label)
 
-        left_subtree = DecisionTreeClassifier(left_subtree_data, left_subtree_label)
-        right_subtree = DecisionTreeClassifier(right_subtree_data, right_subtree_label)
+        left_subtree = self.create_decision_tree(left_subtree_data, left_subtree_label)
+        right_subtree = self.create_decision_tree(right_subtree_data, right_subtree_label)
 
         tree.set_left_subtree(left_subtree)
         tree.set_right_subtree(right_subtree)
 
         return tree
 
-    def predict(self, x, root="BEGIN"):
+    def predict_one(self, x, root="BEGIN"):
         """
-        @type x: ndarray (m x n)
+        @type x: ndarray (1 x d) where d is feature size
         @return int (prediction)
         """
         if root == "BEGIN":
@@ -111,3 +112,10 @@ class DecisionTreeClassifier(object):
             return self.predict(x, root.get_left_subtree())
         else:
             return self.predict(x, root.get_right_subtree())
+
+    def predict(self, x):
+        """
+        @type x: ndarray (m x d) where d is feature size
+        @return int (prediction)
+        """
+        return np.apply_along_axis(self.predict_one, 1, x)
